@@ -3,9 +3,9 @@ var appScanner = function(dataCallback, errorCallback) {
     var _dataCallback = dataCallback;
     var _errorCallback = errorCallback;
 
-    function Scanner() {
-
+    function Scanner() {        
         this.scannerType = "NO SCANNER";
+        this.enabled = false;
 
         if (sap.ui.Device.os.android && window.datawedge) {
             return new Datawedge();
@@ -26,7 +26,7 @@ var appScanner = function(dataCallback, errorCallback) {
     }
 
     function LineaPro() {
-
+        this.enabled = true;
         this.scannerType = "LINEAPRO";
 
         var onConnectionCallback = function() {}
@@ -50,6 +50,7 @@ var appScanner = function(dataCallback, errorCallback) {
     LineaPro.prototype.constructor = LineaPro;
 
     function Honeywell() {
+        this.enabled = true;
         this.scannerType = "HONEYWELL";
 
         navigator.honeywell_scanner_plugin.scan(function(data) {
@@ -68,7 +69,7 @@ var appScanner = function(dataCallback, errorCallback) {
 
     function Datawedge() {
         this.scannerType = "DATAWEDGE";
-        this.enabled = false;
+        this.enabled;
 
         this.start = function() {
             datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
@@ -112,6 +113,9 @@ var appScanner = function(dataCallback, errorCallback) {
         getType: function() {
             return o.scannerType;
         },
+        isEnabled: function() {
+            return o.enabled;      
+        },
         changeCallbacks: function(dataCallback, errorCallback) {
             _dataCallback = dataCallback;
             _errorCallback = errorCallback;
@@ -124,6 +128,6 @@ var appScanner = function(dataCallback, errorCallback) {
         },
         switchProfile: function(profile) {
             o.switchProfile(profile);
-        }
+        },
     }
 };
