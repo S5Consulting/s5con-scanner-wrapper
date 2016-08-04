@@ -68,8 +68,8 @@ var appScanner = function(dataCallback, errorCallback) {
     Honeywell.prototype.constructor = Honeywell;
 
     function Datawedge() {
+        this.enabled = true;
         this.scannerType = "DATAWEDGE";
-        this.enabled;
 
         this.start = function() {
             datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
@@ -101,7 +101,7 @@ var appScanner = function(dataCallback, errorCallback) {
         }
     }
 
-    Datawedg.prototype.switchProfile = function(profile) {        
+    Datawedge.prototype.switchProfile = function(profile) {        
         datawedge.switchProfile(profile);
         this.enabled = false;
         this.enable();
