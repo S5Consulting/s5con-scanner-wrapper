@@ -15,8 +15,13 @@ var appScanner = function(dataCallback, errorCallback) {
             return new Honeywell();
         }
     }
-
     Scanner.prototype.enable = function() {
+        throw "Not implemented";
+    }
+    Scanner.prototype.disable = function() {
+        throw "Not implemented";
+    }
+    Scanner.prototype.switchProfile = function() {
         throw "Not implemented";
     }
 
@@ -63,16 +68,43 @@ var appScanner = function(dataCallback, errorCallback) {
 
     function Datawedge() {
         this.scannerType = "DATAWEDGE";
+        this.enabled = false;
 
-        datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
-        datawedge.registerForBarcode(function(data) {
-            var labelType = data.type;
-            var barcode = data.barcode;
-            _dataCallback(barcode);
-        });
+        this.start = function() {
+            datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
+            datawedge.registerForBarcode(function(data) {
+                var labelType = data.type;
+                var barcode = data.barcode;
+                _dataCallback(barcode);
+                enabled = true;
+            });
+        }
+
+        this.disable = function() {
+            datawedge.unregisterBarcode();
+        }
+        start();
     }
     Datawedge.prototype = Object.create(Scanner.prototype);
     Datawedge.prototype.constructor = Datawedge;
+
+    Datawedge.prototype.enable = function() {
+        if (!this.enabled) {
+            this.start();
+        }                
+    }
+
+    Datawedge.prototype.disable = function() {
+        if (this.enabled) {
+            this.disable();
+        }
+    }
+
+    Datawedg.prototype.switchProfile = function(profile) {        
+        datawedge.switchProfile(profile);
+        this.enabled = false;
+        this.enable();
+    }
 
     var o = new Scanner();
 
@@ -86,7 +118,12 @@ var appScanner = function(dataCallback, errorCallback) {
         },
         enable: function() {
             o.enable();
+        },
+        disable: function() {
+            o.disable();
+        },
+        switchProfile: function(profile) {
+            o.switchProfile(profile);
         }
     }
-
 };
