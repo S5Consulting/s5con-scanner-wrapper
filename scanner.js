@@ -1,5 +1,4 @@
 var appScanner = function(dataCallback, errorCallback) {
-
     /* Singleton instance */
     if (arguments.callee._appScannerInstance) {
         arguments.callee._appScannerInstance.changeCallbacks(dataCallback, errorCallback);
@@ -9,17 +8,76 @@ var appScanner = function(dataCallback, errorCallback) {
     var _dataCallback = dataCallback;
     var _errorCallback = errorCallback;
 
+    var verify = {
+    	Honeywell: function() {
+    		(function () {
+    			return new Promise(function (resolve, reject) {
+		        	navigator.aidc.init(function () {
+			        	navigator.aidc.claim(function () {
+			        		resolve();
+			        	}, function(error) {
+			        		reject();
+			        	});
+			        }, function(error) {
+		        		reject();
+			        });
+    			});
+    		})().then(function() {
+    			return true;
+    		}, function() {
+    			return false;
+    		});
+    	},
+    	LineaPro: function() {
+    		(function () {
+    			return new Promise(function (resolve, reject) {
+    				LineaProCDV.initDT(
+		            	function() { // Connection
+		            		resolve();
+		            	},
+		            	null, null,
+		            	function() { // Cancel
+		            		reject();
+		            	},
+		            	function() { // Error
+		            		reject();
+		            	});		
+	    			});
+    		})().then(function() {
+    			return true;
+    		}, function() {
+    			return false;
+    		});	        
+    	},
+    	Datawedge: function() {
+    		(function () {
+    			return new Promise(function (resolve, reject) {
+    				try {
+    					datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
+    					resolve();
+    				} catch (e) {
+    					reject();
+    				}
+    			});
+    		}).then(function() {
+    			return true;
+    		}, function() {
+				return false;
+    		});
+    	}
+    }
+
     function Scanner() {
         this.scannerType = "NO SCANNER";
         this.enabled = false;
         this.active = false;
 
-        if (sap.ui.Device.os.android && window.datawedge) {
-            return new Datawedge();
-        } else if (sap.ui.Device.os.ios && window.LineaProCDV) {
-            return new LineaPro();
-        } else if (typeof navigator.honeywell_scanner_plugin !== "undefined") {
+        if (typeof navigator.aidc !== "undefined" && verify.Honeywell()) {
             return new Honeywell();
+        } else if (sap.ui.Device.os.ios && window.LineaProCDV && verify.LineaPro()) {
+            return new LineaPro();
+        } else if (sap.ui.Device.os.android && window.datawedge && verify.Datawedge()) {
+            return new Datawedge();
         }
     }
     Scanner.prototype.enable = function() {
@@ -75,17 +133,14 @@ var appScanner = function(dataCallback, errorCallback) {
     function Honeywell() {
         this.enabled = true;
         this.scannerType = "HONEYWELL";
-
-        navigator.honeywell_scanner_plugin.scan(function(data) {
-            _dataCallback(data.barcode);
-        }, function(error) {
-            _errorCallback(error);
-        });
-        navigator.honeywell_scanner_plugin.startListen(function(data) {
-            _dataCallback(data.barcode);
-        }, function(error) {
-            _errorCallback(error);
-        });
+		
+		navigator.aidc.register(function (event) {
+			if (event.success) {
+				_dataCallback(event.data);
+			} else {
+				_errorCallback();
+			}
+		});        
     }
     Honeywell.prototype = Object.create(Scanner.prototype);
     Honeywell.prototype.constructor = Honeywell;
@@ -95,12 +150,11 @@ var appScanner = function(dataCallback, errorCallback) {
         this.scannerType = "DATAWEDGE";
 
         this.start = function() {
-            datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
+            //datawedge.start("com.bluefletch.motorola.datawedge.ACTION");
             datawedge.registerForBarcode(function(data) {
                 var labelType = data.type;
                 var barcode = data.barcode;
                 _dataCallback(barcode);
-                enabled = true;
             });
         }
 
